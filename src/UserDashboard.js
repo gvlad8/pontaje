@@ -58,7 +58,7 @@ const UserDashboard = () => {
       fetchIstoricPontaje();
       calculeazaOreSaptamanaCurenta();
     }
-  }, [user]); // Dependență pe user
+  }, [user, calculeazaOreSaptamanaCurenta, fetchIstoricPontaje]); // Dependență pe user
 
   const incepePontaj = async () => {
     try {
