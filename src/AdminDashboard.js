@@ -126,10 +126,11 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Dashboard Admin</h1>
-        <button onClick={handleLogout}>Log Out</button>
-      </header>
+<header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <h1>Dashboard Admin</h1>
+  <button onClick={handleLogout}>Log Out</button>  {/* Un singur buton de log-out */}
+</header>
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {/* Secțiunea de Pontaje Active */}

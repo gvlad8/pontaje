@@ -1,4 +1,3 @@
-// src/UserDashboard.js
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase';  // Asigură-te că ai configurat corect Firebase
 import { collection, addDoc, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -12,13 +11,7 @@ const UserDashboard = () => {
   const [error, setError] = useState(null);
   const user = auth.currentUser;  // Utilizatorul autentificat
 
-  useEffect(() => {
-    if (user) {
-      fetchIstoricPontaje();
-      calculeazaOreSaptamanaCurenta();
-    }
-  }, [user]);
-
+  // Functiile trebuie definite mai sus
   const fetchIstoricPontaje = async () => {
     try {
       const q = query(collection(db, 'timesheets'), where('userId', '==', user.uid));
@@ -33,9 +26,8 @@ const UserDashboard = () => {
   const calculeazaOreSaptamanaCurenta = async () => {
     try {
       const startOfWeek = new Date();
-      // Calculăm începutul săptămânii (presupunem că săptămâna începe luni)
       const day = startOfWeek.getDay();  // 0 = Duminică, 1 = Luni, etc.
-      const offset = day === 0 ? -6 : 1 - day; // Dacă e duminică, considerăm că săptămâna a început luni anterioră
+      const offset = day === 0 ? -6 : 1 - day;
       startOfWeek.setDate(startOfWeek.getDate() + offset);
 
       const q = query(
@@ -61,12 +53,18 @@ const UserDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      fetchIstoricPontaje();
+      calculeazaOreSaptamanaCurenta();
+    }
+  }, [user]); // Dependență pe user
+
   const incepePontaj = async () => {
     try {
       const startTime = new Date();
       setPontajInceput(true);
       setPontajStart(startTime);
-      // Salvăm pontajul de început cu active setat pe true
       await addDoc(collection(db, 'timesheets'), {
         userId: user.uid,
         startTime: startTime,
@@ -74,7 +72,6 @@ const UserDashboard = () => {
         date: startTime.toISOString(),
         active: true
       });
-      // Actualizează istoricul
       fetchIstoricPontaje();
     } catch (err) {
       setError("Eroare la începerea pontajului: " + err.message);
@@ -85,7 +82,6 @@ const UserDashboard = () => {
     try {
       const stopTime = new Date();
       setPontajInceput(false);
-      // Căutăm documentul de pontaj activ pentru acest utilizator
       const pontajRef = collection(db, 'timesheets');
       const q = query(
         pontajRef,
@@ -116,10 +112,11 @@ const UserDashboard = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Dashboard Utilizator</h1>
-        <button onClick={handleLogout}>Log Out</button>
-      </header>
+<header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <h1>Dashboard Utilizator</h1>
+  <button onClick={handleLogout}>Log Out</button>  {/* Un singur buton de log-out */}
+</header>
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <h2>Ore în săptămâna curentă: {oreSaptamanaCurenta.toFixed(2)} ore</h2>
       <div>

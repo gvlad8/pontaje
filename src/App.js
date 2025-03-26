@@ -1,52 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase'; // Importă autentificarea Firebase
+import { auth } from './firebase';
+import { signOut } from 'firebase/auth'; // Folosește pentru a ieși din cont
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 import Login from './Login';
 import Signup from './Signup';
 import './App.css';
-import { signOut } from 'firebase/auth'; // Dacă vrei să adaugi funcționalitate de logout
 
 function App() {
-  const [user, setUser] = useState(null); // Stocăm utilizatorul autentificat
-  const [loading, setLoading] = useState(true); // Stocăm statusul de încărcare
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Ascultăm schimbările de autentificare
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user); // Actualizăm starea cu utilizatorul
-      setLoading(false); // Oprim încărcarea când avem răspunsul
+      setUser(user);
+      setLoading(false);
     });
     
-    return () => unsubscribe(); // Curățăm când componenta se dezasociază
+    return () => unsubscribe();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.log("Eroare la deconectare: ", err.message);
+    }
+  };
+
   if (loading) {
-    return <div>Loading...</div>; // Poți înlocui cu un loading spinner dacă vrei
+    return <div>Loading...</div>;
   }
 
   return (
     <Router>
-      <Routes>
-        {/* Rute pentru login și signup */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
-        {/* Redirecționăm utilizatorul în funcție de starea de autentificare */}
-        <Route 
-          path="/" 
-          element={user ? (
-            user.uid === 'f6CQGIWFhUepX6szme5GdzvEZ8W2' ? ( // Admin
-              <AdminDashboard />
-            ) : ( // User
-              <UserDashboard />
-            )
-          ) : (
-            <Navigate to="/login" replace /> // Dacă nu ești autentificat, redirecționează la login
-          )}
-        />
-      </Routes>
+      <div>
+        {user && <button onClick={handleLogout}>Log Out</button>} {/* Buton de logout */}
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route 
+            path="/" 
+            element={user ? (
+              user.uid === 'f6CQGIWFhUepX6szme5GdzvEZ8W2' ? <AdminDashboard /> : <UserDashboard />
+            ) : (
+              <Navigate to="/login" replace />
+            )}
+          />
+        </Routes>
+      </div>
     </Router>
   );
 }
