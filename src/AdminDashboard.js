@@ -56,6 +56,14 @@ const AdminDashboard = () => {
       setError("Eroare la închiderea pontajului: " + err.message);
     }
   };
+  
+const formatDuration = (decimalHours) => {
+  const totalMinutes = Math.round(decimalHours * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}min`;
+};
+
 
   const fetchAggregatedHours = async () => {
     try {
@@ -131,7 +139,7 @@ const AdminDashboard = () => {
     <div style={{ padding: '20px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Dashboard Admin</h1>
-        
+        <button onClick={handleLogout}>Logout</button>
       </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -153,9 +161,10 @@ const AdminDashboard = () => {
             <tbody>
               {activeTimesheets.map(ts => (
                 <tr key={ts.id}>
-                  <td>{ts.username}</td>
-                  <td>{new Date(ts.startTime.seconds * 1000).toLocaleString()}</td>
-                  <td>{ts.endTime ? new Date(ts.endTime.seconds * 1000).toLocaleString() : 'În curs'}</td>
+                  <td>{week1 !== '-' ? formatDuration(aggregatedHours[username][week1]) : '-'}</td>
+                  <td>{week2 !== '-' ? formatDuration(aggregatedHours[username][week2]) : '-'}</td>
+                  <td>{week3 !== '-' ? formatDuration(aggregatedHours[username][week3]) : '-'}</td>
+
                   <td>
                     {ts.active && (
                       <button onClick={() => stopAdminPontaj(ts.id)}>Închide Pontaj</button>
