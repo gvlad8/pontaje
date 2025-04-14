@@ -5,12 +5,14 @@ body {
   color: #f0f0f0;
   margin: 0;
   padding: 0;
-  min-height: 100vh; /* schimbat din height */
+  /* A fost mărit font-size-ul de bază */
+  font-size: 18px; 
+  min-height: 100vh;
   background-image: url('https://example.com/mayans-background.jpg');
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
-  display: block; /* scoate flex-ul */
+  display: block;
 }
 
 /* Containerul principal (pentru login și alte secțiuni) */
@@ -25,7 +27,7 @@ body {
 
 /* Titlu */
 h1 {
-  font-size: 36px;
+  font-size: 42px; /* mărire font pentru titlu */
   font-weight: bold;
   text-align: center;
   color: #fff;
@@ -40,13 +42,13 @@ form {
 }
 
 label {
-  font-size: 18px;
+  font-size: 20px; /* mărire puțin label-ul */
   color: #fff;
 }
 
 input {
   padding: 16px;
-  font-size: 16px;
+  font-size: 18px; /* font mărit */
   border: 2px solid #444;
   border-radius: 6px;
   background-color: #333;
@@ -56,12 +58,12 @@ input {
 }
 
 input:focus {
-  border-color: #d32f2f; /* Border de culoare roșu pentru focus */
+  border-color: #d32f2f;
 }
 
 button {
   padding: 16px;
-  font-size: 18px;
+  font-size: 20px; /* mărire font pe buton */
   background-color: #b71c1c;
   color: white;
   border: none;
@@ -77,13 +79,14 @@ button:hover {
 p {
   text-align: center;
   margin-top: 20px;
-  font-size: 16px;
+  font-size: 18px;
   color: #fff;
 }
 
 a {
   color: #b71c1c;
   text-decoration: none;
+  font-size: 18px;
 }
 
 a:hover {
@@ -94,13 +97,13 @@ a:hover {
 p.error {
   color: red;
   text-align: center;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 /* Tabele */
 .table-container {
   width: 100%;
-  overflow-x: auto;  /* Permite scroll orizontal dacă tabelul este prea larg */
+  overflow-x: auto;
   padding: 0 15px;
   box-sizing: border-box;
 }
@@ -118,6 +121,7 @@ th, td {
   padding: 14px;
   text-align: left;
   color: #f0f0f0;
+  font-size: 18px;
 }
 
 th {
@@ -137,6 +141,7 @@ td button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
+  font-size: 16px; /* asigură consistența fontului */
 }
 
 td button:hover {
@@ -147,17 +152,18 @@ td button:hover {
 .error {
   color: red;
   margin-top: 20px;
+  font-size: 18px;
 }
 
 /* Media Queries pentru responsive design */
 @media (max-width: 768px) {
   table {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   button {
     padding: 12px 18px;
-    font-size: 16px;
+    font-size: 18px;
   }
 
   th, td {
@@ -169,11 +175,11 @@ td button:hover {
   }
 
   h1 {
-    font-size: 32px;
+    font-size: 36px;
   }
 
   input, button {
-    font-size: 15px;
+    font-size: 17px;
     padding: 14px;
   }
 }
@@ -191,11 +197,11 @@ td button:hover {
   }
 
   h1 {
-    font-size: 28px;
+    font-size: 32px;
   }
 
   input, button {
-    font-size: 14px;
+    font-size: 16px;
     padding: 12px;
   }
 }
