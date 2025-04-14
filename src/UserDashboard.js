@@ -11,15 +11,18 @@ const UserDashboard = () => {
   const [error, setError] = useState(null);
   const user = auth.currentUser;  // Utilizatorul autentificat
 
-  // Functia pentru a formata durata în ore și minute
-  const formatDuration = (decimalHours) => {
-    const totalMinutes = Math.round(decimalHours * 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}min`;
+  // Functiile trebuie definite mai sus
+  const fetchIstoricPontaje = async () => {
+    try {
+      const q = query(collection(db, 'timesheets'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const pontaje = querySnapshot.docs.map(doc => doc.data());
+      setIstoricPontaje(pontaje);
+    } catch (err) {
+      setError("Eroare la încărcarea istoricului de pontaje: " + err.message);
+    }
   };
 
-  // Functia de a calcula orele din săptămâna curentă
   const calculeazaOreSaptamanaCurenta = async () => {
     try {
       const startOfWeek = new Date();
@@ -55,7 +58,7 @@ const UserDashboard = () => {
       fetchIstoricPontaje();
       calculeazaOreSaptamanaCurenta();
     }
-  }, [user, calculeazaOreSaptamanaCurenta, fetchIstoricPontaje]); // Dependență pe user
+  }, [user]); // Dependență pe user
 
   const incepePontaj = async () => {
     try {
@@ -107,11 +110,18 @@ const UserDashboard = () => {
     }
   };
 
+  // Funcție pentru a formata durata în ore și minute
+  const formatDuration = (decimalHours) => {
+    const totalMinutes = Math.round(decimalHours * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}min`;
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Dashboard Utilizator</h1>
-        {/* Un singur buton de log-out */}
       </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
