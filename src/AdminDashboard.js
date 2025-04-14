@@ -1,15 +1,15 @@
 // src/AdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 
 const AdminDashboard = () => {
   const [activeTimesheets, setActiveTimesheets] = useState([]);
   const [aggregatedHours, setAggregatedHours] = useState({});
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
-  
-  // UID-ul adminului
+
   const adminUid = 'f6CQGIWFhUepX6szme5GdzvEZ8W2';
   const user = auth.currentUser;
 
@@ -17,18 +17,16 @@ const AdminDashboard = () => {
     if (user && user.uid === adminUid) {
       fetchActiveTimesheets();
       fetchAggregatedHours();
+      fetchUsers();
     }
   }, [user]);
 
-  // Secțiunea 1: Pontaje Active
   const fetchActiveTimesheets = async () => {
     try {
-      // Interogăm doar pontajele active
       const q = query(collection(db, 'timesheets'), where('active', '==', true));
       const snapshot = await getDocs(q);
       const timesheets = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-      
-      // Construim o mapare: userId => username
+
       const userMap = {};
       for (const ts of timesheets) {
         if (!userMap[ts.userId]) {
@@ -36,13 +34,12 @@ const AdminDashboard = () => {
           userMap[ts.userId] = userDoc.exists() ? userDoc.data().username : ts.userId;
         }
       }
-      
-      // Adăugăm câmpul "username" în fiecare pontaj
+
       const enrichedTimesheets = timesheets.map(ts => ({
         ...ts,
         username: userMap[ts.userId],
       }));
-      
+
       setActiveTimesheets(enrichedTimesheets);
     } catch (err) {
       setError("Eroare la încărcarea pontajelor active: " + err.message);
@@ -60,45 +57,33 @@ const AdminDashboard = () => {
     }
   };
 
-  // Secțiunea 2: Aggregate ore pe ultimele 3 săptămâni
   const fetchAggregatedHours = async () => {
     try {
       const now = new Date();
       const threeWeeksAgo = new Date();
-      threeWeeksAgo.setDate(now.getDate() - 21); // Ultimele 3 săptămâni
-      
-      // Interogăm toate pontajele din ultimele 3 săptămâni
+      threeWeeksAgo.setDate(now.getDate() - 21);
       const q = query(collection(db, 'timesheets'), where('startTime', '>=', threeWeeksAgo));
       const snapshot = await getDocs(q);
       const timesheets = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-
-      // Luăm doar pontajele care au endTime (adică finalizate)
       const closedTimesheets = timesheets.filter(ts => ts.endTime);
 
-      // Grupăm pontajele pe utilizator și pe săptămână (calculăm începutul săptămânii, considerând că începe luni)
-      const aggregation = {}; // Structură: { userId: { weekKey: totalHours } }
+      const aggregation = {};
       closedTimesheets.forEach(ts => {
         const startTime = ts.startTime.toDate();
         const endTime = ts.endTime.toDate();
-        const duration = (endTime - startTime) / (1000 * 3600); // Durata în ore
+        const duration = (endTime - startTime) / (1000 * 3600);
 
-        // Calculăm începutul săptămânii pentru pontaj
         const weekStart = new Date(startTime);
         const day = weekStart.getDay();
         const offset = day === 0 ? -6 : 1 - day;
         weekStart.setDate(weekStart.getDate() + offset);
-        const weekKey = weekStart.toISOString().slice(0, 10); // Format: "YYYY-MM-DD"
+        const weekKey = weekStart.toISOString().slice(0, 10);
 
-        if (!aggregation[ts.userId]) {
-          aggregation[ts.userId] = {};
-        }
-        if (!aggregation[ts.userId][weekKey]) {
-          aggregation[ts.userId][weekKey] = 0;
-        }
+        if (!aggregation[ts.userId]) aggregation[ts.userId] = {};
+        if (!aggregation[ts.userId][weekKey]) aggregation[ts.userId][weekKey] = 0;
         aggregation[ts.userId][weekKey] += duration;
       });
 
-      // Pentru fiecare user, înlocuim userId cu numele de utilizator
       const aggregatedWithUsername = {};
       for (const uid in aggregation) {
         const userDoc = await getDoc(doc(db, 'users', uid));
@@ -109,6 +94,24 @@ const AdminDashboard = () => {
       setAggregatedHours(aggregatedWithUsername);
     } catch (err) {
       setError("Eroare la calcularea orelor agregate: " + err.message);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'users'));
+      setUsers(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+    } catch (err) {
+      setError("Eroare la încărcarea utilizatorilor: " + err.message);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      await deleteDoc(doc(db, 'users', userId));
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    } catch (err) {
+      setError("Eroare la ștergerea utilizatorului: " + err.message);
     }
   };
 
@@ -126,14 +129,13 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-<header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-  <h1>Dashboard Admin</h1>
-    {/* Un singur buton de log-out */}
-</header>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Dashboard Admin</h1>
+        <button onClick={handleLogout}>Logout</button>
+      </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Secțiunea de Pontaje Active */}
       <section style={{ marginBottom: '40px' }}>
         <h2>Pontaje Active</h2>
         {activeTimesheets.length === 0 ? (
@@ -166,8 +168,7 @@ const AdminDashboard = () => {
         )}
       </section>
 
-      {/* Secțiunea de Ore Agregate pe Utilizator pentru Ultimele 3 Săptămâni */}
-      <section>
+      <section style={{ marginBottom: '40px' }}>
         <h2>Total Ore pe Utilizator - Ultimele 3 Săptămâni</h2>
         {Object.keys(aggregatedHours).length === 0 ? (
           <p>Nu există date de pontaj pentru ultimele 3 săptămâni.</p>
@@ -183,9 +184,7 @@ const AdminDashboard = () => {
             </thead>
             <tbody>
               {Object.keys(aggregatedHours).map(username => {
-                // Sortează săptămânile descrescător (cele mai recente mai întâi)
                 const weeks = Object.keys(aggregatedHours[username]).sort().reverse();
-                // Extrage ultimele 3 săptămâni (dacă există)
                 const week1 = weeks[0] || '-';
                 const week2 = weeks[1] || '-';
                 const week3 = weeks[2] || '-';
@@ -198,6 +197,32 @@ const AdminDashboard = () => {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section>
+        <h2>Utilizatori</h2>
+        {users.length === 0 ? (
+          <p>Nu există utilizatori.</p>
+        ) : (
+          <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', textAlign: 'left' }}>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Acțiune</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td>{u.username}</td>
+                  <td>{u.email}</td>
+                  <td><button onClick={() => deleteUser(u.id)}>Șterge</button></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
