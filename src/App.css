@@ -38,11 +38,13 @@ form {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  align-items: center; /* centrează tot ce e în formular */
 }
 
 label {
   font-size: 18px;
   color: #dddddd;
+  align-self: flex-start;
 }
 
 input {
@@ -53,6 +55,7 @@ input {
   border-radius: 8px;
   color: #fff;
   transition: border-color 0.3s ease;
+  width: 100%;
 }
 
 input:focus {
@@ -61,7 +64,7 @@ input:focus {
 }
 
 button {
-  padding: 14px;
+  padding: 14px 24px;
   font-size: 20px;
   background-color: #b71c1c;
   color: #fff;
@@ -69,6 +72,8 @@ button {
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  display: block;
+  margin: 0 auto; /* centrează butonul */
 }
 
 button:hover {
@@ -124,7 +129,7 @@ table {
 th, td {
   padding: 14px;
   font-size: 16px;
-  text-align: left;
+  text-align: center;
   color: #e0e0e0;
 }
 
@@ -147,6 +152,7 @@ tr:hover td {
   background-color: #444 !important;
 }
 
+/* Centrează butoanele din tabel */
 td button {
   padding: 8px 14px;
   font-size: 15px;
@@ -156,6 +162,8 @@ td button {
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  display: inline-block;
+  margin: 0 auto;
 }
 
 td button:hover {
