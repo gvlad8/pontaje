@@ -56,14 +56,15 @@ const AdminDashboard = () => {
       setError("Eroare la închiderea pontajului: " + err.message);
     }
   };
-  
-const formatDuration = (decimalHours) => {
-  const totalMinutes = Math.round(decimalHours * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}h ${minutes}min`;
-};
 
+  const getStartOfWeek = (date) => {
+    const day = date.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(date);
+    monday.setDate(monday.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  };
 
   const fetchAggregatedHours = async () => {
     try {
@@ -75,21 +76,27 @@ const formatDuration = (decimalHours) => {
       const timesheets = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       const closedTimesheets = timesheets.filter(ts => ts.endTime);
 
+      const weeks = [
+        getStartOfWeek(new Date(now)),
+        getStartOfWeek(new Date(now.setDate(now.getDate() - 7))),
+        getStartOfWeek(new Date(now.setDate(now.getDate() - 7))),
+      ];
+
       const aggregation = {};
+
       closedTimesheets.forEach(ts => {
         const startTime = ts.startTime.toDate();
         const endTime = ts.endTime.toDate();
         const duration = (endTime - startTime) / (1000 * 3600);
 
-        const weekStart = new Date(startTime);
-        const day = weekStart.getDay();
-        const offset = day === 0 ? -6 : 1 - day;
-        weekStart.setDate(weekStart.getDate() + offset);
-        const weekKey = weekStart.toISOString().slice(0, 10);
-
-        if (!aggregation[ts.userId]) aggregation[ts.userId] = {};
-        if (!aggregation[ts.userId][weekKey]) aggregation[ts.userId][weekKey] = 0;
-        aggregation[ts.userId][weekKey] += duration;
+        weeks.forEach((weekStart, i) => {
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 7);
+          if (startTime >= weekStart && startTime < weekEnd) {
+            if (!aggregation[ts.userId]) aggregation[ts.userId] = [0, 0, 0];
+            aggregation[ts.userId][i] += duration;
+          }
+        });
       });
 
       const aggregatedWithUsername = {};
@@ -139,7 +146,6 @@ const formatDuration = (decimalHours) => {
     <div style={{ padding: '20px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Dashboard Admin</h1>
-        <button onClick={handleLogout}>Logout</button>
       </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -161,10 +167,9 @@ const formatDuration = (decimalHours) => {
             <tbody>
               {activeTimesheets.map(ts => (
                 <tr key={ts.id}>
-                  <td>{week1 !== '-' ? formatDuration(aggregatedHours[username][week1]) : '-'}</td>
-                  <td>{week2 !== '-' ? formatDuration(aggregatedHours[username][week2]) : '-'}</td>
-                  <td>{week3 !== '-' ? formatDuration(aggregatedHours[username][week3]) : '-'}</td>
-
+                  <td>{ts.username}</td>
+                  <td>{new Date(ts.startTime.seconds * 1000).toLocaleString()}</td>
+                  <td>{ts.endTime ? new Date(ts.endTime.seconds * 1000).toLocaleString() : 'În curs'}</td>
                   <td>
                     {ts.active && (
                       <button onClick={() => stopAdminPontaj(ts.id)}>Închide Pontaj</button>
@@ -187,25 +192,19 @@ const formatDuration = (decimalHours) => {
               <tr>
                 <th>Username</th>
                 <th>Ultima Săptămână</th>
-                <th>Penița Săptămână</th>
+                <th>Penultima Săptămână</th>
                 <th>Antepenultimă Săptămână</th>
               </tr>
             </thead>
             <tbody>
-              {Object.keys(aggregatedHours).map(username => {
-                const weeks = Object.keys(aggregatedHours[username]).sort().reverse();
-                const week1 = weeks[0] || '-';
-                const week2 = weeks[1] || '-';
-                const week3 = weeks[2] || '-';
-                return (
-                  <tr key={username}>
-                    <td>{username}</td>
-                    <td>{week1 !== '-' ? aggregatedHours[username][week1].toFixed(2) + " ore" : '-'}</td>
-                    <td>{week2 !== '-' ? aggregatedHours[username][week2].toFixed(2) + " ore" : '-'}</td>
-                    <td>{week3 !== '-' ? aggregatedHours[username][week3].toFixed(2) + " ore" : '-'}</td>
-                  </tr>
-                );
-              })}
+              {Object.entries(aggregatedHours).map(([username, weeks]) => (
+                <tr key={username}>
+                  <td>{username}</td>
+                  <td>{weeks[0] ? weeks[0].toFixed(2) + " ore" : '-'}</td>
+                  <td>{weeks[1] ? weeks[1].toFixed(2) + " ore" : '-'}</td>
+                  <td>{weeks[2] ? weeks[2].toFixed(2) + " ore" : '-'}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
