@@ -113,15 +113,26 @@ const AdminDashboard = () => {
     }
   };
 
-  const deleteUser = async (userId) => {
-    try {
-      await deleteDoc(doc(db, 'users', userId));
-      setUsers(prev => prev.filter(u => u.id !== userId));
-    } catch (err) {
-      setError("Eroare la ștergerea utilizatorului: " + err.message);
+const deleteUser = async (userId) => {
+  try {
+    // 1. Șterge pontajele asociate utilizatorului
+    const q = query(collection(db, 'timesheets'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    const timesheetsToDelete = snapshot.docs.map(docSnap => docSnap.id);
+    
+    for (const timesheetId of timesheetsToDelete) {
+      await deleteDoc(doc(db, 'timesheets', timesheetId));
     }
-  };
 
+    // 2. Șterge utilizatorul din colecția 'users'
+    await deleteDoc(doc(db, 'users', userId));
+
+    // 3. Actualizează lista de utilizatori din UI
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  } catch (err) {
+    setError("Eroare la ștergerea utilizatorului și a pontajelor: " + err.message);
+  }
+};
   const handleLogout = async () => {
     try {
       await signOut(auth);
