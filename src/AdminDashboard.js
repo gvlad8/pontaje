@@ -131,7 +131,7 @@ const AdminDashboard = () => {
     <div style={{ padding: '20px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Dashboard Admin</h1>
-        <button onClick={handleLogout}>Logout</button>
+        
       </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
