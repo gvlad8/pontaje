@@ -1,3 +1,4 @@
+
 // src/AdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
@@ -113,41 +114,26 @@ const AdminDashboard = () => {
     }
   };
 
-  const deleteTimesheet = async (userId, weekKey) => {
-    try {
-      const q = query(collection(db, 'timesheets'), where('userId', '==', userId), where('startTime', '>=', weekKey));
-      const snapshot = await getDocs(q);
-      snapshot.forEach(docSnap => {
-        deleteDoc(doc(db, 'timesheets', docSnap.id));
-      });
-
-      fetchAggregatedHours();
-    } catch (err) {
-      setError("Eroare la ștergerea pontajelor: " + err.message);
+const deleteUser = async (userId) => {
+  try {
+    // 1. Șterge pontajele asociate utilizatorului
+    const q = query(collection(db, 'timesheets'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    const timesheetsToDelete = snapshot.docs.map(docSnap => docSnap.id);
+    
+    for (const timesheetId of timesheetsToDelete) {
+      await deleteDoc(doc(db, 'timesheets', timesheetId));
     }
-  };
 
-  const deleteUser = async (userId) => {
-    try {
-      // 1. Șterge pontajele asociate utilizatorului
-      const q = query(collection(db, 'timesheets'), where('userId', '==', userId));
-      const snapshot = await getDocs(q);
-      const timesheetsToDelete = snapshot.docs.map(docSnap => docSnap.id);
-      
-      for (const timesheetId of timesheetsToDelete) {
-        await deleteDoc(doc(db, 'timesheets', timesheetId));
-      }
+    // 2. Șterge utilizatorul din colecția 'users'
+    await deleteDoc(doc(db, 'users', userId));
 
-      // 2. Șterge utilizatorul din colecția 'users'
-      await deleteDoc(doc(db, 'users', userId));
-
-      // 3. Actualizează lista de utilizatori din UI
-      setUsers(prev => prev.filter(u => u.id !== userId));
-    } catch (err) {
-      setError("Eroare la ștergerea utilizatorului și a pontajelor: " + err.message);
-    }
-  };
-
+    // 3. Actualizează lista de utilizatori din UI
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  } catch (err) {
+    setError("Eroare la ștergerea utilizatorului și a pontajelor: " + err.message);
+  }
+};
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -164,6 +150,7 @@ const AdminDashboard = () => {
     <div style={{ padding: '20px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Dashboard Admin</h1>
+        
       </header>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -212,7 +199,6 @@ const AdminDashboard = () => {
                 <th>Ultima Săptămână</th>
                 <th>Penița Săptămână</th>
                 <th>Antepenultimă Săptămână</th>
-                <th>Acțiune</th>
               </tr>
             </thead>
             <tbody>
@@ -227,11 +213,6 @@ const AdminDashboard = () => {
                     <td>{week1 !== '-' ? formatDuration(aggregatedHours[username][week1]) : '-'}</td>
                     <td>{week2 !== '-' ? formatDuration(aggregatedHours[username][week2]) : '-'}</td>
                     <td>{week3 !== '-' ? formatDuration(aggregatedHours[username][week3]) : '-'}</td>
-                    <td>
-                      {week1 !== '-' && (
-                        <button onClick={() => deleteTimesheet(username, week1)}>Șterge Pontaj</button>
-                      )}
-                    </td>
                   </tr>
                 );
               })}
